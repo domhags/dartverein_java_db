@@ -9,12 +9,13 @@ public class MitgliedDAO {
     private final Connection connection;
 
     public MitgliedDAO(Connection connection) {
-        this.connection = connection;
+        this.connection = connection; // Datenbankverbindung setzen
     }
 
     public void mitgliedHinzufuegen(Mitglied mitglied) throws SQLException {
         String insertSQL = "";
 
+        // Unterscheiden zwischen Spieler und Trainer für das passende SQL-Statement
         if (mitglied instanceof Spieler) {
             insertSQL = "INSERT INTO Spieler (vorname, nachname, geburtsdatum, anzahl_spiele, wurftechnik) VALUES (?, ?, ?, ?, ?)";
         } else if (mitglied instanceof Trainer) {
@@ -22,39 +23,45 @@ public class MitgliedDAO {
         }
 
         try (PreparedStatement pstmt = connection.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
+            // Allgemeine Mitgliedsinformationen setzen
             pstmt.setString(1, mitglied.getVorname());
             pstmt.setString(2, mitglied.getNachname());
             pstmt.setDate(3, java.sql.Date.valueOf(mitglied.getGeburtsdatum()));
 
+            // Spieler-spezifische Felder setzen
             if (mitglied instanceof Spieler) {
                 Spieler s = (Spieler) mitglied;
                 pstmt.setInt(4, s.getAnzahlSpiele());
                 pstmt.setString(5, s.getWurftechnik());
-            } else if (mitglied instanceof Trainer) {
+            }
+            // Trainer-spezifische Felder setzen
+            else if (mitglied instanceof Trainer) {
                 Trainer t = (Trainer) mitglied;
                 pstmt.setString(4, t.getLizenznummer());
                 pstmt.setInt(5, t.getErfahrungsjahre());
             }
 
-            pstmt.executeUpdate();
+            pstmt.executeUpdate(); // Ausführung des SQL-Statements
             ResultSet generatedKeys = pstmt.getGeneratedKeys();
             if (generatedKeys.next()) {
-                int id = generatedKeys.getInt(1);
+                int id = generatedKeys.getInt(1); // Generierte Mitglieds-ID abrufen
                 System.out.println("Mitglied erfolgreich hinzugefügt mit ID: " + id);
             }
         }
     }
 
+    // Mitglieder aus beiden Tabellen anzeigen (Spieler und Trainer)
     public void zeigeMitglieder(Statement stmt) throws SQLException {
         zeigeMitgliederAusTabelle(stmt, "Spieler");
         zeigeMitgliederAusTabelle(stmt, "Trainer");
     }
 
+    // Mitglieder aus einer spezifischen Tabelle anzeigen
     private void zeigeMitgliederAusTabelle(Statement stmt, String tableName) throws SQLException {
         String query = "SELECT * FROM " + tableName;
         ResultSet rs = stmt.executeQuery(query);
 
-        if (!rs.isBeforeFirst()) {
+        if (!rs.isBeforeFirst()) { // Prüfen, ob es Ergebnisse gibt
             System.out.println("Keine Mitglieder in der Tabelle " + tableName);
             return;
         }
@@ -75,11 +82,14 @@ public class MitgliedDAO {
             String nachname = rs.getString("nachname");
             LocalDate geburtsdatum = rs.getDate("geburtsdatum").toLocalDate();
 
+            // Daten für Spieler
             if (tableName.equals("Spieler")) {
                 int anzahlSpiele = rs.getInt("anzahl_spiele");
                 String wurftechnik = rs.getString("wurftechnik");
                 System.out.format("%-5d %-15s %-15s %-12s %-10d %-15s\n", id, vorname, nachname, geburtsdatum, anzahlSpiele, wurftechnik);
-            } else if (tableName.equals("Trainer")) {
+            }
+            // Daten für Trainer
+            else if (tableName.equals("Trainer")) {
                 String lizenznummer = rs.getString("lizenznummer");
                 int erfahrungsjahre = rs.getInt("erfahrungsjahre");
                 System.out.format("%-5d %-15s %-15s %-12s %-15s %-10d\n", id, vorname, nachname, geburtsdatum, lizenznummer, erfahrungsjahre);
@@ -90,7 +100,7 @@ public class MitgliedDAO {
         }
     }
 
-
+    // Auswahl eines Mitgliedstyps (Spieler oder Trainer)
     public static Mitglied getMitglied(Scanner scanner) {
         System.out.println("Wählen Sie die Art des Mitglieds aus:");
         System.out.println("1. Spieler");
@@ -120,6 +130,7 @@ public class MitgliedDAO {
         return mitglied;
     }
 
+    // Spieler erstellen
     private static Spieler erstelleSpieler(Scanner scanner) {
         System.out.println("Geben Sie den Vornamen des Spielers ein: ");
         String vorname = scanner.nextLine();
@@ -135,6 +146,7 @@ public class MitgliedDAO {
         return new Spieler(vorname, nachname, geburtsdatum, anzahlSpiele, wurftechnik);
     }
 
+    // Trainer erstellen
     private static Trainer erstelleTrainer(Scanner scanner) {
         System.out.println("Geben Sie den Vornamen des Trainers ein: ");
         String vorname = scanner.nextLine();

@@ -9,24 +9,27 @@ public class VereinDAO {
     private final Connection connection;
 
     public VereinDAO(Connection connection) {
-        this.connection = connection;
+        this.connection = connection; // Datenbankverbindung setzen
     }
 
+    // Verein in die Datenbank einfügen
     public void vereinHinzufuegen(Verein verein) throws SQLException {
         String insertSQL = "INSERT INTO Verein (name, gegruendet) VALUES (?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
+            // Name und Gründungsdatum des Vereins setzen
             pstmt.setString(1, verein.getName());
             pstmt.setDate(2, java.sql.Date.valueOf(verein.getGegruendet()));
 
-            pstmt.executeUpdate();
+            pstmt.executeUpdate(); // SQL-Statement ausführen
             ResultSet generatedKeys = pstmt.getGeneratedKeys();
             if (generatedKeys.next()) {
-                int id = generatedKeys.getInt(1);
+                int id = generatedKeys.getInt(1); // Generierte Vereins-ID abrufen
                 System.out.println("Verein erfolgreich hinzugefügt mit ID: " + id);
             }
         }
     }
 
+    // Verein aus Benutzereingabe erstellen
     public static Verein getVerein(Scanner scanner) {
         System.out.println("Geben Sie den Namen des Vereins ein: ");
         String name = scanner.nextLine();
@@ -36,6 +39,7 @@ public class VereinDAO {
         return new Verein(name, gegruendet);
     }
 
+    // Alle Vereine aus der Datenbank anzeigen
     public static void zeigeVereine(Statement stmt) throws SQLException {
         System.out.println("--- Alle Vereine ---");
         String query = "SELECT * FROM Verein";
